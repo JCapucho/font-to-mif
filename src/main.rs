@@ -87,7 +87,7 @@ fn main() -> io::Result<()> {
                 .short("r")
                 .long("range")
                 .value_name("RANGE")
-                .default_value("0..255")
+                .default_value("0..256")
                 .validator(|value| range_parser(&value).map(|_| ()))
                 .help("Sets the range of glyphs to process"),
         )
@@ -100,9 +100,9 @@ fn main() -> io::Result<()> {
 
     let font = FontVec::try_from_vec(font_data).unwrap();
 
-    let depth = range.len() * 8;
+    let depth = range.len() * 64;
 
-    let mut data: Vec<u8> = vec![0; depth];
+    let mut data: Vec<u8> = vec![0; depth / 8];
 
     for i in range {
         let glyph = font.glyph_id(From::from(i as u8)).with_scale(8.0);
@@ -128,7 +128,7 @@ fn main() -> io::Result<()> {
         path.file_name().unwrap().to_str().unwrap()
     )?;
     writeln!(&mut out, "DEPTH = {};", depth)?;
-    writeln!(&mut out, "WIDTH = 8;")?;
+    writeln!(&mut out, "WIDTH = 1;")?;
     writeln!(&mut out, "ADDRESS_RADIX = HEX;")?;
     writeln!(&mut out, "DATA_RADIX = HEX;\n")?;
     writeln!(&mut out, "CONTENT")?;
@@ -136,7 +136,7 @@ fn main() -> io::Result<()> {
     writeln!(&mut out)?;
 
     for (addr, byte) in data.into_iter().enumerate() {
-        writeln!(&mut out, "{:03X} : {:02X};", addr, byte)?;
+        writeln!(&mut out, "{:04X} : {:02X};", addr * 8, byte)?;
     }
 
     writeln!(&mut out)?;
